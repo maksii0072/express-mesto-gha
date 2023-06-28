@@ -1,0 +1,5 @@
+const ERROR_BAD_DATA = 400;
+const ERROR_NOT_FOUND = 404;
+const ERROR_DEFAULT = 500;
+
+module.exports = { ERROR_BAD_DATA, ERROR_NOT_FOUND, ERROR_DEFAULT };
