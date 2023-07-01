@@ -1,13 +1,11 @@
 const Card = require('../models/card');
 const { ERROR_BAD_DATA, ERROR_NOT_FOUND, ERROR_DEFAULT } = require('../utils/errors');
-
 module.exports.getAllCards = (req, res) => {
   Card.find({})
     .populate(['owner', 'likes'])
     .then((cards) => res.send({ data: cards }))
     .catch(() => res.status(ERROR_DEFAULT).send({ message: 'Произошла ошибка' }));
 };
-
 module.exports.createCard = (req, res) => {
   const { name, link } = req.body;
   const owner = req.user._id;
@@ -25,16 +23,22 @@ module.exports.createCard = (req, res) => {
       }
     });
 };
-
 module.exports.deleteCard = (req, res) => {
   const owner = req.user._id;
   const { cardId } = req.params;
   Card.findByIdAndRemove({ owner, _id: cardId })
     .then((card) => {
-      if (card) res.send({ data: card });
+      if (card) res.send({ message: 'Карточка удалена' });
       else res.status(ERROR_NOT_FOUND).send({ message: 'Карточка не найдена' });
     })
-    .catch(() => res.status(ERROR_DEFAULT).send({ message: 'Произошла ошибка' }));
+    
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        res.status(ERROR_BAD_DATA).send({ message: 'Переданы некорректные данные карточки.' });
+      } else {
+        res.status(ERROR_DEFAULT).send({ message: 'Произошла ошибка' });
+      }
+    });
 };
 
 module.exports.likeCard = (req, res) => {
@@ -56,7 +60,6 @@ module.exports.likeCard = (req, res) => {
       }
     });
 };
-
 module.exports.dislikeCard = (req, res) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
