@@ -1,20 +1,36 @@
 const router = require('express').Router();
+// eslint-disable-next-line import/no-extraneous-dependencies
+const { celebrate, Joi } = require('celebrate');
 const {
   getAllUsers,
   getUserById,
-  createUser,
   updateUser,
   updateAvatar,
+  getUser,
 } = require('../controllers/users');
+const { LINK } = require('../utils/regex');
 
-router.get('/users', getAllUsers); // возвращает всех пользователей
+router.get('/', getAllUsers); // возвращает всех пользователей
 
-router.get('/users/:userId', getUserById); // возвращает пользователя по _id
+router.get('/me', getUser);
 
-router.post('/users', createUser); // создаёт пользователя
+router.get('/:userId', celebrate({
+  params: Joi.object().keys({
+    userId: Joi.string().hex().length(24).required(),
+  }),
+}), getUserById); // возвращает пользователя по _id
 
-router.patch('/users/me', updateUser); // обновляет профиль
+router.patch('/me', celebrate({
+  body: Joi.object().keys({
+    name: Joi.string().min(2).max(30).required(),
+    about: Joi.string().min(2).max(30).required(),
+  }),
+}), updateUser); // обновляет профиль
 
-router.patch('/users/me/avatar', updateAvatar); //  обновляет аватар
+router.patch('/me/avatar', celebrate({
+  body: Joi.object().keys({
+    avatar: Joi.string().required().regex(LINK),
+  }),
+}), updateAvatar); //  обновляет аватар
 
 module.exports = router;

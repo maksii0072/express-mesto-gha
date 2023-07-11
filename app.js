@@ -1,28 +1,34 @@
+// eslint-disable-next-line import/no-extraneous-dependencies
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
-const userRouter = require('./routes/users');
-const cardRouter = require('./routes/cards');
-const { ERROR_NOT_FOUND } = require('./utils/errors');
+// eslint-disable-next-line import/no-extraneous-dependencies
+const { errors } = require('celebrate');
+// eslint-disable-next-line import/no-extraneous-dependencies
+const cookieParser = require('cookie-parser');
+// eslint-disable-next-line import/no-extraneous-dependencies
+const helmet = require('helmet');
+const rootRoute = require('./routes/index');
+const genErrorHandler = require('./middlewares/genErrorHandler');
+const limiter = require('./middlewares/limiter');
 
 const { PORT = 3000 } = process.env;
 const app = express();
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use((req, res, next) => {
-  req.user = {
-    _id: '643e55f1be77c29a704154c4', //  _id созданного пользователя
-  };
-  next();
-});
-app.use(userRouter);
-app.use(cardRouter);
-app.all('*', (req, res) => {
-  res.status(ERROR_NOT_FOUND).send({ message: 'Страница не найдена' });
-});
+
+// console.log(process.env.NODE_ENV);
 
 // подключаемся к серверу mongo
 mongoose.connect('mongodb://127.0.0.1:27017/mestodb', {
   useNewUrlParser: true,
 });
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(helmet());
+app.use(limiter);
+app.use('/', rootRoute);
+app.use(errors());
+app.use(genErrorHandler);
+
 app.listen(PORT);
