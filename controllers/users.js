@@ -1,7 +1,5 @@
 const mongoose = require('mongoose');
-// eslint-disable-next-line import/no-extraneous-dependencies
 const bcrypt = require('bcryptjs');
-// eslint-disable-next-line import/no-extraneous-dependencies
 const jwt = require('jsonwebtoken');
 
 const { JWT_SECRET, NODE_ENV } = process.env;
@@ -10,8 +8,7 @@ const NotFoundError = require('../error/NotFoundError');
 const BadDataError = require('../error/BadDataError');
 const ConflictError = require('../error/ConflictError');
 
-// eslint-disable-next-line max-len
-const userDataUpdate = (req, res, updateData, next) => { // функция-декоратор для получения данных пользователя
+const userDataUpdate = (req, res, updateData, next) => {
   User.findByIdAndUpdate(
     req.user._id,
     updateData,
@@ -23,13 +20,12 @@ const userDataUpdate = (req, res, updateData, next) => { // функция-де�
     .then((user) => {
       if (user) res.send({ data: user });
       else {
-        throw new NotFoundError('Пользователь не найден');
+        next(new NotFoundError('Пользователь не найден'));
       }
     })
     .catch((err) => {
-      // eslint-disable-next-line max-len
       if (err instanceof mongoose.Error.ValidationError) {
-        throw new BadDataError('Переданы некорректные данные.');
+        next(new BadDataError('Переданы некорректные данные.'));
       } else {
         next(err);
       }
@@ -82,15 +78,13 @@ module.exports.createUser = (req, res, next) => {
       about,
       avatar,
       email,
-      // eslint-disable-next-line max-len
-      password: hash, // записываем хеш в базу. Метод принимает на вход два параметра: пароль и длину так называемой «соли» — случайной строки, которую метод добавит к паролю перед хешированем.
+      password: hash,
     }))
     .then((user) => {
       const dataUser = user.toObject();
       delete dataUser.password;
       res.status(200).send(dataUser);
     })
-    // eslint-disable-next-line consistent-return
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
         next(new BadDataError('Переданы некорректные данные.'));
@@ -114,9 +108,8 @@ module.exports.updateAvatar = (req, res) => {
 
 module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
-  return User.findUserByCredentials(email, password)
+  User.findUserByCredentials(email, password)
     .then((user) => {
-    // создадим токен
       const token = jwt.sign({ _id: user._id }, NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret', { expiresIn: '7d' });
       res.cookie('jwt', token, {
         maxAge: 3600000 * 24 * 7,
